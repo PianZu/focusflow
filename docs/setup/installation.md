@@ -106,11 +106,80 @@ You should receive a response with all the messages and a 200 OK Statuscode.
 
 You should receive a response containing the saved message with an ID and a 200 OK Statuscode.
 
+
 ---
 
-## Done!
 
-You're now up and running with the FocusFlow backend! 
+
+# FocusFlow Frontend Setup Guide (Next.js + Tailwind)
+
+This section guides you through setting up and running the frontend for FocusFlow using Next.js.
+
+
+## Prerequisites
+
+### 1. Node.js and npm
+Install Node.js (which includes npm) from:
+- https://nodejs.org/
+
+After installation, verify:
+```bash
+node -v
+npm -v
+```
+
+---
+
+## Install Dependencies
+
+Navigate into the frontend directory (or wherever your Next.js frontend is located):
+```bash
+cd frontend
+```
+
+Install all required packages:
+```bash
+npm install
+```
+
+---
+
+## Set Up Environment Variables
+
+Create a `.env` file in the frontend root directory:
+
+```env
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8080
+```
+
+Make sure the backend is running on this address. Adjust if needed.
+
+---
+
+## Run the Frontend
+
+In the frontend directory, start the development server:
+```bash
+npm run dev
+```
+
+The frontend will now be available at:
+```
+http://localhost:3000
+```
+
+---
+
+## View Messages from Backend
+
+Open your browser and go to:
+```
+http://localhost:3000/messages
+```
+
+This page should load all entries from the database via the Spring Boot backend.
+
+You're now fully connected front to back!
 
 
 
