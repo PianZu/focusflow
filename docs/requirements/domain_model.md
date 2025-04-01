@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides details on the implementation of the core domain models for the FocusFlow application. It includes entity relationships, enums and helper methods.
+This document provides details on the implementation of the core domain models for the FocusFlow application. It includes entity relationships, enums and service methods.
 
 ## 1. **Implemented Enums**
 
@@ -87,7 +87,7 @@ Represents the current status of a task:
 
 ---
 
-## 3. **Helper methods**
+## 3. **Service **methods****
 
 For entity and task management.
 

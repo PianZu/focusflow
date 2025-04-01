@@ -30,12 +30,15 @@ public class TaskService {
 
         Task task = new Task();
         task.setStatus(TaskStatus.OPEN);
+        task.setPriority(TaskPriority.MEDIUM);
         task.setAssignee(user);
+        user.getTasks().add(task);
 
         teamId.ifPresent(id -> {
             Team team = teamRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Team not found"));
             task.setTeam(team);
+            team.getTasks().add(task);
         });
 
         return taskRepository.save(task);
