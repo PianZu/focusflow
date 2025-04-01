@@ -24,10 +24,12 @@ public class TaskService {
     private TeamRepository teamRepository;
 
     // Method: Create and save task to the database
-    public Task createTask(Task task, Long userId, Optional<Long> teamId) {
+    public Task createTask(Long userId, Optional<Long> teamId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found, cannot assign task"));
 
+        Task task = new Task();
+        task.setStatus(TaskStatus.OPEN);
         task.setAssignee(user);
 
         teamId.ifPresent(id -> {
