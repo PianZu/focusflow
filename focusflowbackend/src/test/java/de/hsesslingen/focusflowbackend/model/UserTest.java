@@ -57,4 +57,35 @@ class UserTest {
         assertEquals(1, user.getTasks().size());
         assertTrue(user.getTasks().contains(task));
     }
+
+    @Test
+    void testUserWithNullFields() {
+        user.setEmail(null);
+        user.setPassword(null);
+        user.setFirstName(null);
+        user.setLastName(null);
+
+        assertNull(user.getEmail());
+        assertNull(user.getPassword());
+        assertNull(user.getFirstName());
+        assertNull(user.getLastName());
+    }
+
+    @Test
+    void testEmptyPassword() {
+        user.setPassword("");
+        assertEquals("", user.getPassword());
+    }
+
+    @Test
+    void testValidEmailFormat() {
+        user.setEmail("test@example.com");
+        assertTrue(user.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$"));
+    }
+
+    @Test
+    void testInvalidEmailFormat() {
+        user.setEmail("invalid-email-format");
+        assertFalse(user.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$"));
+    }
 }

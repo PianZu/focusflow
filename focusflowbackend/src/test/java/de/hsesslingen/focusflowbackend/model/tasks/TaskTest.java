@@ -42,4 +42,33 @@ class TaskTest {
         assertEquals(assignee, task.getAssignee());
         assertEquals(team, task.getTeam());
     }
+
+    @Test
+    void testTaskCreationWithNullFields() {
+        Task task = new Task();
+        task.setTitle(null);
+        task.setDescription(null);
+        task.setLongDescription(null);
+        task.setDueDate(null);
+        task.setPriority(null);
+        task.setStatus(null);
+        task.setAssignee(null);
+        task.setTeam(null);
+
+        assertNull(task.getTitle());
+        assertNull(task.getDescription());
+        assertNull(task.getLongDescription());
+        assertNull(task.getDueDate());
+        assertNull(task.getPriority());
+        assertNull(task.getStatus());
+        assertNull(task.getAssignee());
+        assertNull(task.getTeam());
+    }
+
+    @Test
+    void testTaskDueDatePast() {
+        LocalDateTime pastDate = LocalDateTime.now().minusDays(1);
+        task.setDueDate(pastDate);
+        assertTrue(task.getDueDate().isBefore(LocalDateTime.now()));
+    }
 }

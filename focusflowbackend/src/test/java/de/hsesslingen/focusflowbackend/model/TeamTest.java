@@ -54,4 +54,15 @@ class TeamTest {
         assertTrue(team.getTasks().contains(task));
     }
 
+    @Test
+    void testTeamWithNullMembers() {
+        team.setMembers(null);
+        assertNull(team.getMembers());
+    }
+
+    @Test
+    void testTeamWithEmptyTasks() {
+        team.setTasks(new HashSet<>());
+        assertTrue(team.getTasks().isEmpty());
+    }
 }
