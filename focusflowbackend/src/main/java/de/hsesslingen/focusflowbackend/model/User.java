@@ -34,7 +34,4 @@ public class User {
 
     @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL)
     private Set<Task> tasks = new HashSet<>();
-
-    @Column(nullable = false)
-    private String role = "USER"; // New: Default role
 }
