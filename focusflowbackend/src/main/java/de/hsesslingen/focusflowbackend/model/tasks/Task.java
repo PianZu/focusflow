@@ -36,8 +36,8 @@ public class Task {
     @JoinColumn(name = "assignee_id")
     private User assignee;
 
-    @ManyToOne(optional = true)
-    @JoinColumn(name = "team_id", nullable = true)
+    @ManyToOne
+    @JoinColumn(name = "team_id")
     // The task can be assigned to a team, but it's not mandatory
     private Team team;   
 }

@@ -2,6 +2,8 @@ package de.hsesslingen.focusflowbackend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -10,6 +12,7 @@ import de.hsesslingen.focusflowbackend.model.tasks.Task;
 
 @Entity
 @Data
+@EqualsAndHashCode(exclude = "members")
 @Table(name = "teams")
 // This class represents a team in the system
 public class Team {
