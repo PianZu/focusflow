@@ -1,0 +1,43 @@
+Feature: User Registration in Focusflow
+    As a new user,
+    I want to register for an FocusFlow account with secure credentials,
+    So that I can access the Focusflow platform and manage my tasks securely
+
+Scenario: Register with valid credentials
+    Given I am on the registration page
+    When I enter a "chris@example.com" as the email
+    And I enter "Chris" as the first name
+    And I enter "Meyer" as the last name
+    And I enter "StrongP@ss1!" as the password
+    And I confirm the password "StrongP@ss1!"
+    And I click the "Register" button
+    Then I should see a success message "Registration successful!"
+    And I should be redirected to the login page
+
+Scenario: Password missing uppercase letter
+    Given I am on the registration page
+    When I enter a "user@example.com" as the email
+    And I enter "lowercase1!" as the password
+    And I confirm the password "lowercase1!"
+    And I click the "Register" button
+    Then I should see an error message "Password must contain at least one uppercase letter"
+    And I should remain on the registration page
+
+Scenario: Password confirmation does not match
+    Given I am on the registration page
+    When I enter a "kevin@aol.com" as the email
+    And I enter "ValidP@ss1!" as the password
+    And I confirm the password "InvalidP@ss1!"
+    And I click the "Register" button
+    Then I should see an error message "Password confirmation does not match"
+    And I should remain on the registration page
+
+Scenario: Email already registered
+    Given I am on the registration page
+    When I enter a "cucumber@example.com" as the email
+    And I enter "ValidP@ss1!" as the password
+    And I confirm the password "ValidP@ss1!"
+    And I click the "Register" button
+    Then I should see an error message "Email already registered"
+    And I should remain on the registration page
+
