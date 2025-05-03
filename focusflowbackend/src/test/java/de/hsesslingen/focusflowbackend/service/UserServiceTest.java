@@ -38,6 +38,7 @@ class UserServiceTest {
         testUser = new User();
         testUser.setEmail("testuser@example.com");
         testUser.setPassword("Password123!");
+        testUser.setPasswordConfirm("Password123!");
         testUser.setRole("USER");
 
         testTeam = new Team();
@@ -60,6 +61,7 @@ class UserServiceTest {
     @Test
     public void testRegisterUserInvalidPassword() {
         testUser.setPassword("short");
+        testUser.setPasswordConfirm("short");
 
         IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, 
             () -> userService.registerUser(testUser));

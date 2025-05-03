@@ -21,6 +21,10 @@ public class UserService {
 
     // Method: Register a user with valid credentials
     public User registerUser(User user) {
+        // Check if password confirmation matches
+        if (user.getPasswordConfirm() == null || !user.getPassword().equals(user.getPasswordConfirm())) {
+            throw new IllegalArgumentException("Passwords do not match");
+        }
         // Validate user credentials
         if (!isValid(user)) {
             throw new IllegalArgumentException("Invalid user data");

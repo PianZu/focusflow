@@ -10,6 +10,7 @@ import de.hsesslingen.focusflowbackend.model.Team;
 import de.hsesslingen.focusflowbackend.model.User;
 import de.hsesslingen.focusflowbackend.repository.UserRepository;
 import de.hsesslingen.focusflowbackend.repository.TeamRepository;
+import de.hsesslingen.focusflowbackend.service.UserService;
 
 import java.util.Optional;
 
@@ -20,6 +21,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
+    private final UserService userService;
 
     // GET: Get user by ID
     @GetMapping()
@@ -34,13 +36,26 @@ public class UserController {
 
     // POST: Register a new user
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody User user) {
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build(); 
+    public ResponseEntity<?> registerUser(@RequestBody User user) {
+        if (user.getPasswordConfirm()== null || !user.getPassword().equals(user.getPasswordConfirm())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password confirmation does not match.");
         }
-        user.setRole("USER");
-        User savedUser = userRepository.save(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists."); 
+        }
+        try {
+            user.setRole("USER");
+            userService.registerUser(user);
+    
+            // Redirect to /login after successful registration
+            return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Location", "/login")
+                .build();
+    
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     // POST: Login a user
