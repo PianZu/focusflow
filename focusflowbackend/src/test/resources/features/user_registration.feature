@@ -10,8 +10,8 @@ Scenario: Register with valid credentials
     And I enter "Meyer" as the last name
     And I enter "StrongP@ss1!" as the password
     And I confirm the password "StrongP@ss1!"
-    And I click the "Register" button
-    Then I should see a success message "Registration successful!"
+    And I click the "Register" registration button
+    Then I should see the registration success message "Registration successful!"
     And I should be redirected to the login page
 
 Scenario: Password missing uppercase letter
@@ -19,25 +19,28 @@ Scenario: Password missing uppercase letter
     When I enter a "user@example.com" as the email
     And I enter "lowercase1!" as the password
     And I confirm the password "lowercase1!"
-    And I click the "Register" button
-    Then I should see an error message "Password must contain at least one uppercase letter"
-    And I should remain on the registration page
+    And I click the "Register" registration button
+    Then I should see the user registration error message "Password must contain at least one uppercase letter"
+    And I should remain on the user registration page
 
 Scenario: Password confirmation does not match
     Given I am on the registration page
     When I enter a "kevin@aol.com" as the email
+    # And I enter "Test" as the first name
+    # And I enter "User" as the last name
     And I enter "ValidP@ss1!" as the password
     And I confirm the password "InvalidP@ss1!"
-    And I click the "Register" button
-    Then I should see an error message "Password confirmation does not match"
-    And I should remain on the registration page
+    And I click the "Register" registration button
+    Then I should see the user registration error message "Password confirmation does not match" 
+    And I should remain on the user registration page 
 
 Scenario: Email already registered
     Given I am on the registration page
     When I enter a "cucumber@example.com" as the email
+    # And I enter "Test" as the first name
+    # And I enter "User" as the last name
     And I enter "ValidP@ss1!" as the password
     And I confirm the password "ValidP@ss1!"
-    And I click the "Register" button
-    Then I should see an error message "Email already registered"
-    And I should remain on the registration page
-
+    And I click the "Register" registration button 
+    Then I should see the user registration error message "Email already registered" 
+    And I should remain on the user registration page

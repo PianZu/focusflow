@@ -12,7 +12,7 @@ Scenario: Create a task with valid title and due date
     And enter due date "2025-10-15"
     And I assign the task to "John Doe"
     And I click the "Save" button
-    Then I should see a success message "Task created successfully"
+    Then I should see the task creation success message "Task created successfully"
     Then the task should be saved in the system
     And the task should be visible in my task list
     And "John Doe" should receive a notification about the new task
@@ -25,7 +25,7 @@ Scenario: Assign a task to a user outside my team
     And enter due date "2025-10-15"
     And I assign the task to "Jane Smith"
     And I click the "Save" button
-    Then I should see an error message "Cannot assign task to a user outside your team"
+    Then I should see the task creation error message "Cannot assign task to a user outside your team"
     And the task should not be saved in the system
 
 Scenario: Enter a due date in the past
@@ -35,7 +35,7 @@ Scenario: Enter a due date in the past
     And I enter a task title "Complete project report" 
     And enter due date "2020-10-15"
     And I click the "Save" button
-    Then I should see an error message "Due date cannot be in the past"
+    Then I should see the task creation error message "Due date cannot be in the past"
     And the task should not be saved in the system
 
 Scenario: Enter a task title with fewer than 3 characters
@@ -45,7 +45,7 @@ Scenario: Enter a task title with fewer than 3 characters
     And I enter a task title "ab" 
     And enter due date "2025-10-15"
     And I click the "Save" button
-    Then I should see an error message "Task title must be at least 3 characters long"
+    Then I should see the task creation error message "Task title must be at least 3 characters long"
     And the task should not be saved in the system
 
 Scenario: Notification failure during task assignment
@@ -54,5 +54,5 @@ Scenario: Notification failure during task assignment
     And the notification service is temporarily unavailable
     When I click the "Save" button
     Then the task should be saved in the system
-    And I should see a warning message "Task created, but notification failed"
+    Then I should see the task creation warning message "Task created, but notification failed"
     And the system should log the failure
