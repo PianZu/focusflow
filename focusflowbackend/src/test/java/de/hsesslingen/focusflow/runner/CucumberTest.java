@@ -8,7 +8,7 @@ import io.cucumber.junit.CucumberOptions;
 @CucumberOptions(
     features = {"src/test/resources/features"},
     glue = {"de.hsesslingen.focusflow.steps"},
-    plugin = {"pretty", "html:target/cucumber-reports"},
+    plugin = {"pretty",  "summary","html:target/cucumber-reports"},
     monochrome = true
 )
 public class CucumberTest {

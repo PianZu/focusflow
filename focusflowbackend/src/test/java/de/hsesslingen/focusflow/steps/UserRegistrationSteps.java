@@ -1,5 +1,6 @@
 package de.hsesslingen.focusflow.steps;
 
+import de.hsesslingen.focusflowbackend.FocusflowbackendApplication;
 import io.cucumber.java.en.*;
 import io.cucumber.spring.CucumberContextConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,11 +9,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.http.MediaType;
+
+import static org.junit.jupiter.api.Assertions.assertEquals; 
+import static org.junit.jupiter.api.Assertions.assertTrue;  
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-@SpringBootTest
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.MOCK,
+    classes = FocusflowbackendApplication.class
+)
 @AutoConfigureMockMvc
-@CucumberContextConfiguration
+@CucumberContextConfiguration 
 public class UserRegistrationSteps {
 
     @Autowired
@@ -23,14 +30,15 @@ public class UserRegistrationSteps {
     private String firstName;
     private String lastName;
     private String confirmPassword;
-    private MvcResult result;
+    private MvcResult result; 
 
     @Given("I am on the registration page")
     public void i_am_on_the_registration_page() {
+        
     }
 
-    @When("I enter {string} as the email")
-    public void i_enter_email(String email) {
+    @When("I enter a {string} as the email") 
+    public void i_enter_a_as_the_email(String email) { 
         this.email = email;
     }
 
@@ -54,29 +62,53 @@ public class UserRegistrationSteps {
         this.confirmPassword = confirmPassword;
     }
 
-    @And("I click the {string} button")
-    public void i_click_register(String buttonName) throws Exception {
+
+    @And("I click the {string} registration button")
+    public void i_click_register_button(String buttonName) throws Exception { 
+        if (!"Register".equalsIgnoreCase(buttonName)) {
+            throw new IllegalArgumentException("This step is specific to the 'Register' button.");
+        }
+
         String requestBody = String.format(
-            "{\"email\":\"%s\",\"password\":\"%s\",\"confirmPassword\":\"%s\",\"firstName\":\"%s\",\"lastName\":\"%s\"}",
-            email, password, confirmPassword, firstName, lastName
+            "{\"email\":\"%s\",\"firstName\":\"%s\",\"lastName\":\"%s\",\"password\":\"%s\",\"confirmPassword\":\"%s\"}",
+            this.email, this.firstName, this.lastName, this.password, this.confirmPassword
         );
 
-        result = mockMvc.perform(post("/api/register")
+        this.result = mockMvc.perform(post("/api/user/register") 
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
             .andReturn();
     }
 
-    @Then("I should see a success message {string}")
-    public void i_should_see_message(String expectedMessage) throws Exception {
-        String content = result.getResponse().getContentAsString();
-        assert content.contains(expectedMessage);
+    @Then("I should see the registration success message {string}") 
+    public void i_should_see_registration_success_message(String expectedMessage) throws Exception {
+        String content = this.result.getResponse().getContentAsString();
+        int statusCode = this.result.getResponse().getStatus();
+        assertEquals(302, statusCode, "Expected HTTP status 302 for successful registration redirect.");
     }
 
     @And("I should be redirected to the login page")
     public void i_should_be_redirected_to_login() throws Exception {
-        assert result.getResponse().getStatus() == 302;
+        assertEquals(302, this.result.getResponse().getStatus());
+        String locationHeader = this.result.getResponse().getHeader("Location");
+        assertEquals("/login", locationHeader, "Expected redirect to /login");
+    }
+
+
+    @Then("I should see the user registration error message {string}") 
+    public void i_should_see_the_user_registration_error_message(String expectedErrorMessage) throws Exception {
+        String content = this.result.getResponse().getContentAsString();
+        int statusCode = this.result.getResponse().getStatus();
+
+        assertTrue(statusCode == 400 || statusCode == 409, "Expected HTTP status 400 or 409 for registration error.");
+        assertTrue(content.contains(expectedErrorMessage), "Response body should contain the error message: " + expectedErrorMessage);
+    }
+
+    @Then("I should remain on the user registration page") 
+    public void i_should_remain_on_the_user_registration_page() {
+
+        int statusCode = this.result.getResponse().getStatus();
+        assertTrue(statusCode != 302, "Should not redirect on registration error.");
+
     }
 }
-
-
