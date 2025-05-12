@@ -8,11 +8,13 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import de.hsesslingen.focusflowbackend.model.tasks.Task;
 
 @Entity
 @Data
-@EqualsAndHashCode(exclude = "teams")
+@EqualsAndHashCode(exclude = {"teams", "tasks"})
 @Table(name = "users")
 // This class represents a user in the system
 public class User {
@@ -39,8 +41,10 @@ public class User {
     private LocalDateTime lastLogin;
 
     @ManyToMany(mappedBy = "members")
+    @JsonBackReference
     private Set<Team> teams = new HashSet<>();
 
     @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL)
+    @JsonBackReference
     private Set<Task> tasks = new HashSet<>();
 }

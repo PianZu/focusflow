@@ -4,18 +4,17 @@ Feature: Task Creation in Focusflow
     So that I can manage my responsbilities and
     collaborate with my team effectively
 
-Scenario: Create a task with valid title and due date
+Scenario: Create a task with valid title and due date (assigned to self)
     Given I am a logged-in user
     And I am on the task list view
     When I click on the "New Task" button
-    And I enter a task title "Complete project report" 
+    And I enter a task title "Complete project report"
     And enter due date "2025-10-15"
-    And I assign the task to "John Doe"
+    And I assign the task to "Task Creator"
     And I click the "Save" button
     Then I should see the task creation success message "Task created successfully"
     Then the task should be saved in the system
     And the task should be visible in my task list
-    And "John Doe" should receive a notification about the new task
 
 Scenario: Assign a task to a user outside my team
     Given I am a logged-in user
@@ -50,9 +49,10 @@ Scenario: Enter a task title with fewer than 3 characters
 
 Scenario: Notification failure during task assignment
     Given I am a logged-in user
-    And I create a valid task assigned to "Alex"
+    And I create a valid task assigned to "John Doe"
     And the notification service is temporarily unavailable
     When I click the "Save" button
     Then the task should be saved in the system
     Then I should see the task creation warning message "Task created, but notification failed"
     And the system should log the failure
+

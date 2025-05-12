@@ -5,10 +5,10 @@ import org.springframework.stereotype.Service;
 import de.hsesslingen.focusflowbackend.model.Team;
 import de.hsesslingen.focusflowbackend.model.User;
 import de.hsesslingen.focusflowbackend.repository.UserRepository;
+import de.hsesslingen.focusflowbackend.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.Set;
 import java.util.Optional;
 
 @Service
@@ -17,29 +17,24 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final TeamRepository teamRepository;
+    private final BCryptPasswordEncoder passwordEncoder; 
 
     // Method: Register a user with valid credentials
     public User registerUser(User user) {
-        // Check if password confirmation matches
-        if (user.getPasswordConfirm() == null || !user.getPassword().equals(user.getPasswordConfirm())) {
-            throw new IllegalArgumentException("Passwords do not match");
-        }
-        // Validate user credentials
-        if (!isValid(user)) {
-            throw new IllegalArgumentException("Invalid user data");
-        }
 
-        // Encrypt password before saving
+        // Validate email format and password policies
+        validateUser(user); 
+
+        // Hash the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
         return userRepository.save(user);
     }
 
-    // Method: Validate credentials for login (check if email exists and password matches)
+    // Method: Login validation: check email and password match
     public boolean loginUser(String email, String password) {
         Optional<User> optionalUser = userRepository.findByEmail(email);
-        
+
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             return passwordEncoder.matches(password, user.getPassword());
@@ -48,64 +43,74 @@ public class UserService {
         return false;
     }
 
-    // Method: Validate user credentials (password strength and email format)
-    private boolean isValid(User user) {
-        return user.getPassword() != null && isPasswordValid(user.getPassword()) 
-            && user.getEmail() != null && user.getEmail().contains("@");
+    // Validation: Validate user credentials (email format and password policy)
+    private void validateUser(User user) {
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty() || !user.getEmail().contains("@")) {
+            throw new IllegalArgumentException("Invalid email format or email is empty");
+        }
+        validatePassword(user.getPassword());
     }
 
-    // Password validation with required rules (length, uppercase, lowercase, special character)
-    private boolean isPasswordValid(String password) {
-        if (password.length() < 10 || password.length() > 12) {
-            return false;
+    // Validation: Validate password with detailed checks
+    private void validatePassword(String password) {
+        if (password == null) {
+            throw new IllegalArgumentException("Password must not be null");
         }
 
-        boolean hasUppercase = false;
-        boolean hasLowercase = false;
-        boolean hasSpecialChar = false;
-
-        for (char c : password.toCharArray()) {
-            if (Character.isUpperCase(c)) {
-                hasUppercase = true;
-            } else if (Character.isLowerCase(c)) {
-                hasLowercase = true;
-            } else if (!Character.isLetterOrDigit(c)) {
-                hasSpecialChar = true;
-            }
+        if (password.length() < 10 || password.length() > 12) { 
+            throw new IllegalArgumentException("Password must be between 10 and 12 characters long");
         }
 
-        return hasUppercase && hasLowercase && hasSpecialChar;
+        if (!containsUppercase(password)) {
+            throw new IllegalArgumentException("Password must contain at least one uppercase letter");
+        }
+
+        if (!containsLowercase(password)) {
+            throw new IllegalArgumentException("Password must contain at least one lowercase letter");
+        }
+
+        if (!containsSpecialChar(password)) {
+            throw new IllegalArgumentException("Password must contain at least one special character");
+        }
     }
 
-    // Method: Assign a role to a user, ensure the role is valid
+    // Method: Assign role to user
     public User assignRole(User user, String role) {
-        user.setRole(role);
+        user.setRole(role.toUpperCase());
         return userRepository.save(user);
     }
 
-    // Method: Add a user to a team
+    // Method: Add user to team
     public void addUserToTeam(User user, Team team) {
-        Set<Team> userTeams = user.getTeams();
-        userTeams.add(team);
-        user.setTeams(userTeams); // Ensure the set is updated
+        userRepository.findById(user.getId()).orElseThrow(() -> new RuntimeException("User not found"));
+        teamRepository.findById(team.getId()).orElseThrow(() -> new RuntimeException("Team not found"));
 
-        Set<User> teamMembers = team.getMembers();
-        teamMembers.add(user);
-        team.setMembers(teamMembers); // Ensure the team set is updated
-
+        user.getTeams().add(team);
+        team.getMembers().add(user);
         userRepository.save(user);
     }
 
-    // Method: Remove a user from a team
+    // Method: Remove user from team
     public void removeUserFromTeam(User user, Team team) {
-        Set<Team> userTeams = user.getTeams();
-        userTeams.remove(team);
-        user.setTeams(userTeams); // Ensure the set is updated
-
-        Set<User> teamMembers = team.getMembers();
-        teamMembers.remove(user);
-        team.setMembers(teamMembers); // Ensure the team set is updated
-
+        user.getTeams().remove(team);
+        team.getMembers().remove(user);
         userRepository.save(user);
+    }
+
+    // Helper method: Check if password contains at least one uppercase letter
+    private boolean containsUppercase(String password) {
+        return password.chars().anyMatch(Character::isUpperCase);
+    }
+
+    // Helper method: Check if password contains at least one lowercase letter
+    private boolean containsLowercase(String password) {
+        return password.chars().anyMatch(Character::isLowerCase);
+    }
+
+    // Helper method: Check if password contains at least one special character
+    // Specific set of special characters "!@#$%^&*()_+-=[]{};':\",./<>?"
+    private boolean containsSpecialChar(String password) {
+        String specialChars = "!@#$%^&*()_+-=[]{};':\",./<>?";
+        return password.chars().anyMatch(ch -> specialChars.indexOf(ch) >= 0);
     }
 }

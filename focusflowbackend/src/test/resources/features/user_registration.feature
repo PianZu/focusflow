@@ -17,6 +17,8 @@ Scenario: Register with valid credentials
 Scenario: Password missing uppercase letter
     Given I am on the registration page
     When I enter a "user@example.com" as the email
+    And I enter "Test" as the first name
+    And I enter "User" as the last name
     And I enter "lowercase1!" as the password
     And I confirm the password "lowercase1!"
     And I click the "Register" registration button
@@ -26,8 +28,8 @@ Scenario: Password missing uppercase letter
 Scenario: Password confirmation does not match
     Given I am on the registration page
     When I enter a "kevin@aol.com" as the email
-    # And I enter "Test" as the first name
-    # And I enter "User" as the last name
+    And I enter "Test" as the first name
+    And I enter "User" as the last name
     And I enter "ValidP@ss1!" as the password
     And I confirm the password "InvalidP@ss1!"
     And I click the "Register" registration button
@@ -36,11 +38,12 @@ Scenario: Password confirmation does not match
 
 Scenario: Email already registered
     Given I am on the registration page
-    When I enter a "cucumber@example.com" as the email
-    # And I enter "Test" as the first name
-    # And I enter "User" as the last name
-    And I enter "ValidP@ss1!" as the password
-    And I confirm the password "ValidP@ss1!"
-    And I click the "Register" registration button 
-    Then I should see the user registration error message "Email already registered" 
+    And a user with email "existing.user@example.com" and password "ValidP@ss1!" is already registered
+    When I enter a "existing.user@example.com" as the email
+    And I enter "Test" as the first name
+    And I enter "User" as the last name
+    And I enter "AnotherValidP@ss1!" as the password
+    And I confirm the password "AnotherValidP@ss1!"
+    And I click the "Register" registration button
+    Then I should see the user registration error message "Email already registered"
     And I should remain on the user registration page

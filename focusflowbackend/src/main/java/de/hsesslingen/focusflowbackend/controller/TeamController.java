@@ -1,0 +1,65 @@
+package de.hsesslingen.focusflowbackend.controller;
+
+import de.hsesslingen.focusflowbackend.model.Team;
+import de.hsesslingen.focusflowbackend.service.TeamService;
+import de.hsesslingen.focusflowbackend.dto.TeamCreationRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/teams")
+@RequiredArgsConstructor
+/**
+ * TeamController handles HTTP requests related to teams.
+ * It provides endpoints for creating teams, retrieving team information,
+ * and managing team members.
+ */
+public class TeamController {
+
+    private final TeamService teamService;
+
+    //GET: Get team by ID
+    @GetMapping()
+    public ResponseEntity<Team> getTeamById(@RequestParam Long id) {
+        return teamService.getTeamById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // POST: Create a new team
+    @PostMapping("/create")
+    public ResponseEntity<?> createTeam(@RequestBody TeamCreationRequest request) {
+        try {
+            Team createdTeam = teamService.createTeam(
+                request.getName(),
+                request.getDescription(),
+                request.getMemberEmails(),
+                request.getCreatorEmail()
+            );
+
+            String message = request.getMemberEmails() != null && !request.getMemberEmails().isEmpty()
+                    ? "Team created successfully with members"
+                    : "Team created successfully";
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "message", message,
+                    "teamId", createdTeam.getId()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    // GET: Get all teams for a user
+    @GetMapping("/user")
+    public ResponseEntity<List<Team>> getUserTeams(@RequestParam Long userId) {
+        return ResponseEntity.ok(teamService.getTeamsForUser(userId));
+    }
+}

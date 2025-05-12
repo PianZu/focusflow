@@ -1,52 +1,63 @@
 package de.hsesslingen.focusflowbackend.service;
 
-import org.springframework.stereotype.Service;
 import de.hsesslingen.focusflowbackend.model.Team;
 import de.hsesslingen.focusflowbackend.model.User;
 import de.hsesslingen.focusflowbackend.repository.TeamRepository;
 import de.hsesslingen.focusflowbackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 // This service class is responsible for handling team-related operations
 public class TeamService {
 
-    private TeamRepository teamRepository;
-    private UserRepository userRepository;
+    private final TeamRepository teamRepository;
+    private final UserRepository userRepository;
 
-    // Method: Save the team to the database
-    public Team createTeam(Team team) {
+    // Method: Create a new team with a name, description and members
+    public Team createTeam(String name, String description, List<String> memberEmails, String creatorEmail) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Team name is required");
+        }
+
+        Team team = new Team();
+        team.setName(name);
+        team.setDescription(description);
+
+        Set<User> members = new HashSet<>();
+
+        User creator = userRepository.findByEmail(creatorEmail)
+                .orElseThrow(() -> new RuntimeException("Creator not found: " + creatorEmail));
+        members.add(creator);
+
+        if (memberEmails != null) {
+            for (String email : memberEmails) {
+                User member = userRepository.findByEmail(email)
+                        .orElseThrow(() -> new RuntimeException("User not found: " + email));
+                members.add(member);
+            }
+        }
+
+        team.setMembers(members);
         return teamRepository.save(team);
     }
 
-    // Method: Find team by ID
-    public Optional<Team> findTeamById(Long id) {
+    // Method: Get all teams for a specific user
+    public List<Team> getTeamsForUser(Long userId) {
+        return teamRepository.findAll().stream()
+                .filter(team -> team.getMembers().stream().anyMatch(user -> user.getId().equals(userId)))
+                .collect(Collectors.toList());
+    }
+
+    // Method: Get a team by its ID
+    public Optional<Team> getTeamById(Long id) {
         return teamRepository.findById(id);
-    }
-
-    // Method: Add a user to a team
-    public void addMember(Long teamId, Long userId) {
-        Team team = teamRepository.findById(teamId)
-            .orElseThrow(() -> new RuntimeException("Team not found, cannot add member"));
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found, cannot add to team"));
-
-        team.getMembers().add(user);
-        user.getTeams().add(team);
-        teamRepository.save(team);
-    }
-    
-    // Method: Remove a user from a team
-    public void removeMember(Long teamId, Long userId) {
-        Team team = teamRepository.findById(teamId)
-            .orElseThrow(() -> new RuntimeException("Team not found, cannot remove member"));
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found, cannot remove from team"));
-
-        team.getMembers().remove(user);
-        user.getTeams().remove(team);
-        teamRepository.save(team);
     }
 }

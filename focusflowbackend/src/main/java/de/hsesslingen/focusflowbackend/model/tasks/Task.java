@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import de.hsesslingen.focusflowbackend.model.Team;
 import de.hsesslingen.focusflowbackend.model.User;
 
@@ -34,10 +37,12 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "assignee_id")
+    @JsonManagedReference
     private User assignee;
 
     @ManyToOne
     @JoinColumn(name = "team_id")
+    @JsonBackReference
     // The task can be assigned to a team, but it's not mandatory
     private Team team;   
 }

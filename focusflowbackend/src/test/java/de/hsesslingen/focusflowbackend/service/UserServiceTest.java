@@ -1,7 +1,8 @@
 package de.hsesslingen.focusflowbackend.service;
 
-import de.hsesslingen.focusflowbackend.model.User;
 import de.hsesslingen.focusflowbackend.model.Team;
+import de.hsesslingen.focusflowbackend.model.User;
+import de.hsesslingen.focusflowbackend.repository.TeamRepository;
 import de.hsesslingen.focusflowbackend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,17 +13,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Optional;
+import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-// Test class for UserService following the Arrange-Act-Assert pattern
-// and using Mockito for mocking dependencies.
 class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private TeamRepository teamRepository;
 
     @Mock
     private BCryptPasswordEncoder passwordEncoder;
@@ -36,95 +39,85 @@ class UserServiceTest {
     @BeforeEach
     public void setUp() {
         testUser = new User();
+        testUser.setId(1L);
         testUser.setEmail("testuser@example.com");
         testUser.setPassword("Password123!");
         testUser.setPasswordConfirm("Password123!");
         testUser.setRole("USER");
+        testUser.setTeams(new HashSet<>());
+        testUser.setTasks(new HashSet<>());
 
         testTeam = new Team();
+        testTeam.setId(10L);
         testTeam.setName("Development");
         testTeam.setDescription("Dev team for the project");
+        testTeam.setMembers(new HashSet<>());
+        testTeam.setTasks(new HashSet<>());
+    }
+
+    @Test
+    public void testAddUserToTeam() {
+        // Arrange
+        when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser)); 
+        when(teamRepository.findById(testTeam.getId())).thenReturn(Optional.of(testTeam));
+
+        // Mock the save operation for the user
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // Act
+        userService.addUserToTeam(testUser, testTeam);
+
+        // Assert
+        assertTrue(testUser.getTeams().contains(testTeam), "User's team set should contain the team.");
+        assertTrue(testTeam.getMembers().contains(testUser), "Team's member set should contain the user.");
+        verify(userRepository, times(1)).findById(testUser.getId()); 
+        verify(teamRepository, times(1)).findById(testTeam.getId()); 
+        verify(userRepository, times(1)).save(testUser);
+    }
+
+    @Test
+    public void testRemoveUserFromTeam() {
+        testUser.getTeams().add(testTeam);
+        testTeam.getMembers().add(testUser);
+
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // Act
+        userService.removeUserFromTeam(testUser, testTeam);
+
+        // Assert
+        assertFalse(testUser.getTeams().contains(testTeam), "User's team set should not contain the team.");
+        assertFalse(testTeam.getMembers().contains(testUser), "Team's member set should not contain the user.");
+        verify(userRepository, times(1)).save(testUser);
     }
 
     @Test
     public void testRegisterUserValid() {
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(passwordEncoder.encode(testUser.getPassword())).thenReturn("hashedPassword123");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User userToSave = invocation.getArgument(0);
+            userToSave.setPassword("hashedPassword123"); 
+            return userToSave;
+        });
 
         User savedUser = userService.registerUser(testUser);
 
         assertNotNull(savedUser);
         assertEquals("testuser@example.com", savedUser.getEmail());
         assertEquals("USER", savedUser.getRole());
-        verify(userRepository, times(1)).save(testUser);
+        assertEquals("hashedPassword123", savedUser.getPassword());
+        verify(userRepository, times(1)).save(any(User.class));
+        verify(passwordEncoder, times(1)).encode("Password123!");
     }
 
     @Test
-    public void testRegisterUserInvalidPassword() {
+    public void testRegisterUserInvalidPasswordPolicy() {
         testUser.setPassword("short");
-        testUser.setPasswordConfirm("short");
 
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, 
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
             () -> userService.registerUser(testUser));
-
-        assertEquals("Invalid user data", thrown.getMessage());
-    }
-
-    @Test
-    public void testLoginUserCorrectCredentials() {
-        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-
-        boolean loginSuccess = userService.loginUser(testUser.getEmail(), testUser.getPassword());
-
-        assertTrue(loginSuccess);
-        verify(userRepository, times(1)).findByEmail(testUser.getEmail());
-        verify(passwordEncoder, times(1)).matches(testUser.getPassword(), testUser.getPassword());
-    }
-
-    @Test
-    public void testLoginUserIncorrectPassword() {
-        when(userRepository.findByEmail(testUser.getEmail())).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
-
-        boolean loginSuccess = userService.loginUser(testUser.getEmail(), testUser.getPassword());
-
-        assertFalse(loginSuccess);
-        verify(userRepository, times(1)).findByEmail(testUser.getEmail());
-        verify(passwordEncoder, times(1)).matches(testUser.getPassword(), testUser.getPassword());
-    }
-
-    @Test
-    public void testAssignRole() {
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
-
-        User updatedUser = userService.assignRole(testUser, "ADMIN");
-
-        assertNotNull(updatedUser);
-        assertEquals("ADMIN", updatedUser.getRole());
-        verify(userRepository, times(1)).save(testUser);
-    }
-
-    @Test
-    public void testAddUserToTeam() {
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
-
-        userService.addUserToTeam(testUser, testTeam);
-
-        assertTrue(testUser.getTeams().contains(testTeam));
-        assertTrue(testTeam.getMembers().contains(testUser));
-        verify(userRepository, times(1)).save(testUser);
-    }
-
-    @Test
-    public void testRemoveUserFromTeam() {
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
-        userService.addUserToTeam(testUser, testTeam); // First, add the user to the team
-
-        userService.removeUserFromTeam(testUser, testTeam);
-
-        assertFalse(testUser.getTeams().contains(testTeam));
-        assertFalse(testTeam.getMembers().contains(testUser));
-        verify(userRepository, times(2)).save(testUser); // Called twice: once for adding, once for removing
+        
+        assertEquals("Password must be between 10 and 12 characters long", thrown.getMessage());
+        verify(userRepository, never()).save(any(User.class));
     }
 }
-

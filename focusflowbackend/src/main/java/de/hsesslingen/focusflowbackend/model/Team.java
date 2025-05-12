@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import de.hsesslingen.focusflowbackend.model.tasks.Task;
 
 @Entity
@@ -32,8 +34,10 @@ public class Team {
             joinColumns = @JoinColumn(name = "team_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
+    @JsonManagedReference
     private Set<User> members = new HashSet<>();
 
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private Set<Task> tasks = new HashSet<>();
 }
