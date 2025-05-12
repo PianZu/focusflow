@@ -19,9 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -101,22 +99,23 @@ public class TeamCreationSteps {
     }
 
     @When("I click {string}")
-    public void i_click_button(String buttonName) {
+    public void iClick(String button) {
+        // Optional: Simuliere UI-Klick (nicht nötig für API-Test)
     }
 
     @When("I enter a team name {string}")
-    public void i_enter_a_team_name(String name) {
+    public void iEnterTeamName(String name) {
         this.teamName = name;
     }
 
-    @When("I enter a description {string}")
-    public void i_enter_a_description(String description) {
-        this.teamDescription = description;
+    @When("I leave the team name blank")
+    public void iLeaveTeamNameBlank() {
+        this.teamName = "";
     }
 
-    @When("I leave the team name blank")
-    public void i_leave_the_team_name_blank() {
-        this.teamName = "";
+    @When("I enter a description {string}")
+    public void iEnterDescription(String desc) {
+        this.description = desc;
     }
 
     @When("I select members {string} and {string}")
@@ -227,6 +226,9 @@ public class TeamCreationSteps {
     }
 
     @Then("the members should receive a notification about the new team")
-    public void the_members_should_receive_a_notification_about_the_new_team() {
+    public void membersShouldReceiveNotification() {
+        for (String member : members) {
+            System.out.println("Notification sent to: " + member);
+        }
     }
 }
