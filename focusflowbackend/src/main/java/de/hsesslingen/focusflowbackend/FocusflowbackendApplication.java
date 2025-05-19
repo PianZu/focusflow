@@ -4,8 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import io.github.cdimascio.dotenv.Dotenv;
-@SpringBootApplication(exclude = {org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class, org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration.class})
-//@SpringBootApplication
+@SpringBootApplication
 public class FocusflowbackendApplication {
 
     public static void main(String[] args) {
