@@ -38,6 +38,7 @@ jobs:
           cache: 'maven' 
 
       - name: Build and run tests with Maven
+        working-directory: ./focusflowbackend
         env:
           DB_URL: jdbc:postgresql://localhost:5432/focusflow
           DB_USERNAME: postgres
