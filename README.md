@@ -23,6 +23,10 @@ Beyond basic task creation and editing, FocusFlow highlights a simple but robust
 
 Above all, FocusFlow aims to streamline daily workflows. By avoiding bloated functionality and concentrating on clarity, the system helps individuals and small teams coordinate quickly, remain flexible, and adapt as new priorities emerge. Whether it’s for a semester project, a small dev team, or personal to-do organization, FocusFlow stands as a practical example application that demonstrates how to build, maintain, and test a modern 3-tier web-based solution.
 
+## CI/CD Status
+
+[![FocusFlow Backend CI](https://github.com/Plirexic/focusflow/actions/workflows/ci.yml/badge.svg)](https://github.com/Plirexic/focusflow/actions/workflows/ci.yml)
+
 ## Lizenz
 
 Copyright 2025, licensed under Apache License, Version 2.0.
