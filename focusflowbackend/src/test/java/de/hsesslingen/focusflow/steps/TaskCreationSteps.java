@@ -229,7 +229,7 @@ public class TaskCreationSteps {
         }
 
         // Perform GET request to fetch tasks for the logged-in user
-        MvcResult getTasksResult = mockMvc.perform(get("/api/tasks/user/" + loggedInUser.getId())
+        MvcResult getTasksResult = mockMvc.perform(get("/api/tasks/user?userId=" + loggedInUser.getId())
                         .accept(MediaType.APPLICATION_JSON))
                         .andReturn();
         

@@ -13,10 +13,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -75,8 +75,8 @@ public class TaskController {
     }
 
     // GET: All tasks for a specific user
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Task>> getTasksForUser(@PathVariable Long userId) {
+    @GetMapping("/user")
+    public ResponseEntity<List<Task>> getTasksForUser(@RequestParam Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + userId));
         List<Task> tasks = taskService.getTasksForUser(user);
@@ -84,15 +84,15 @@ public class TaskController {
     }
 
     // GET: All tasks for all users
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<Task>> getAllTasks() {
         List<Task> tasks = taskService.getAllTasks();
         return ResponseEntity.ok(tasks);
     }
 
     // GET: Task by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
+    @GetMapping
+    public ResponseEntity<Task> getTaskById(@RequestParam Long id) {
         return taskRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

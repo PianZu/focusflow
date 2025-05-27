@@ -2,7 +2,7 @@ package de.hsesslingen.focusflowbackend.controller;
 
 import de.hsesslingen.focusflowbackend.model.Team;
 import de.hsesslingen.focusflowbackend.service.TeamService;
-import de.hsesslingen.focusflowbackend.dto.TeamCreationRequest;
+import de.hsesslingen.focusflowbackend.dto.TeamCreationRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +23,13 @@ public class TeamController {
 
     private final TeamService teamService;
 
-    //GET: Get team by ID
+    // GET: Get all teams
+    @GetMapping("/all")
+    public ResponseEntity<List<Team>> getAllTeams() {
+        return ResponseEntity.ok(teamService.getAllTeams());
+    }
+
+    // GET: Get team by ID
     @GetMapping()
     public ResponseEntity<Team> getTeamById(@RequestParam Long id) {
         return teamService.getTeamById(id)
@@ -33,7 +39,7 @@ public class TeamController {
 
     // POST: Create a new team
     @PostMapping("/create")
-    public ResponseEntity<?> createTeam(@RequestBody TeamCreationRequest request) {
+    public ResponseEntity<?> createTeam(@RequestBody TeamCreationRequestDTO request) {
         try {
             Team createdTeam = teamService.createTeam(
                 request.getName(),

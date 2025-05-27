@@ -113,6 +113,17 @@
             </exclusions>
         </dependency>
 
+		<!-- Gatling dependencies -->
+		<dependency>
+			<groupId>io.gatling</groupId>
+			<artifactId>gatling-app</artifactId>
+			<version>3.7.2</version>
+		</dependency>
+		<dependency>
+			<groupId>io.gatling.highcharts</groupId>
+			<artifactId>gatling-charts-highcharts</artifactId>
+			<version>3.7.2</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -208,4 +219,53 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<!-- Profiles for different gatling tests -->
+	<profiles>
+		<profile>
+			<id>constantLoad-simulation</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.gatling</groupId>
+						<artifactId>gatling-maven-plugin</artifactId>
+						<version>4.2.9</version>
+						<configuration>
+						<simulationClass>de.hsesslingen.focusflow.simulations.ConstantLoadSimulation</simulationClass>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>rampLoad-simulation</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.gatling</groupId>
+						<artifactId>gatling-maven-plugin</artifactId>
+						<version>4.2.9</version>
+						<configuration>
+							<simulationClass>de.hsesslingen.focusflow.simulations.RampLoadSimulation</simulationClass>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>spikeLoad-simulation</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.gatling</groupId>
+						<artifactId>gatling-maven-plugin</artifactId>
+						<version>4.2.9</version>
+						<configuration>
+							<simulationClass>de.hsesslingen.focusflow.simulations.SpikeLoadSimulation</simulationClass>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
