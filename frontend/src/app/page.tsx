@@ -1,103 +1,164 @@
-import Image from "next/image";
+// src/app/page.tsx (Beispiel für App Router)
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+"use client"; // Da wir fetch im Client verwenden und State managen
+import {
+    UserLoginData,
+    UserRegistrationData,
+    UserProfile,
+    loginUser,
+    registerUser,
+    // getUserById, // Könnte nützlich sein, um Profildaten nach Login zu holen
+} from '@/services/userService'; // Pfad korrigiert für Konsistenz
+import { useEffect, useState } from 'react';
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+export default function MainPage() {
+    // Authentifizierungs-State
+    const [authUser, setAuthUser] = useState<UserProfile | null>(null); // Angemeldeter Benutzer
+    const [isAuthLoading, setIsAuthLoading] = useState(false);
+    const [authError, setAuthError] = useState<string | null>(null);
+    const [showRegisterForm, setShowRegisterForm] = useState(false);
+
+    // Login Form State
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+
+    // Registrierungs Form State
+    const [registerEmail, setRegisterEmail] = useState('');
+    const [registerPassword, setRegisterPassword] = useState('');
+    const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('');
+    const [registerFirstName, setRegisterFirstName] = useState('');
+    const [registerLastName, setRegisterLastName] = useState('');
+
+    // Effekt, um z.B. zu prüfen, ob der Benutzer bereits eingeloggt ist (z.B. durch ein Token im localStorage)
+    useEffect(() => {
+        // Hier könntest du Logik einfügen, um einen bestehenden Login-Status zu prüfen
+        // z.B. wenn du ein Token im localStorage speicherst.
+        // const token = localStorage.getItem('authToken');
+        // if (token) { /* Benutzer validieren und authUser setzen */ }
+    }, []);
+
+    const handleLoginSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsAuthLoading(true);
+        setAuthError(null);
+        const credentials: UserLoginData = { email: loginEmail, password_P: loginPassword };
+        try {
+            const result = await loginUser(credentials);
+            if (result.success) {
+                // Annahme: Nach erfolgreichem Login setzen wir den Benutzer.
+                // In einer echten App würdest du hier vielleicht das User-Objekt vom Backend bekommen
+                // oder es basierend auf der E-Mail/Token abrufen.
+                // Für dieses Beispiel simulieren wir ein User-Objekt.
+                // Dein Backend /api/user/login gibt aktuell nur eine Textnachricht zurück.
+                // Du müsstest es erweitern, um User-Daten oder ein Token zurückzugeben.
+                // Fürs Erste:
+                alert("Login erfolgreich: " + result.message + "\nNavigiere nun zu Tasks oder Teams.");
+                // Hier müsstest du die User ID bekommen. Da dein Login-Endpunkt keine User-ID zurückgibt,
+                // ist dies ein Platzhalter. Du könntest getUserById nach dem Login aufrufen,
+                // wenn du die ID nicht direkt vom Login-Endpunkt erhältst.
+                // Für dieses Beispiel nehmen wir an, die E-Mail ist eindeutig und wir verwenden eine Dummy-ID.
+                // Besser wäre, wenn dein Login-Endpunkt die UserProfile-Daten zurückgibt.
+                setAuthUser({ id: Date.now(), email: loginEmail, firstName: '', lastName: '', role: 'USER' }); // Platzhalter ID
+                setLoginEmail('');
+                setLoginPassword('');
+            } else {
+                setAuthError(result.message || "Login fehlgeschlagen.");
+            }
+        } catch (err: any) {
+            setAuthError(err.message || "Ein Fehler ist aufgetreten.");
+        } finally {
+            setIsAuthLoading(false);
+        }
+    };
+
+    const handleRegisterSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (registerPassword !== registerPasswordConfirm) {
+            setAuthError("Passwörter stimmen nicht überein.");
+            return;
+        }
+        setIsAuthLoading(true);
+        setAuthError(null);
+        const registrationData: UserRegistrationData = {
+            email: registerEmail,
+            password_P: registerPassword,
+            passwordConfirm: registerPasswordConfirm,
+            firstName: registerFirstName,
+            lastName: registerLastName,
+        };
+        try {
+            const result = await registerUser(registrationData);
+            if (result.success) {
+                alert(result.message); // z.B. "Registrierung erfolgreich. Bitte einloggen."
+                setShowRegisterForm(false); // Zurück zum Login-Formular
+                // Formularfelder leeren
+                setRegisterEmail('');
+                setRegisterPassword('');
+                setRegisterPasswordConfirm('');
+                setRegisterFirstName('');
+                setRegisterLastName('');
+            } else {
+                setAuthError(result.message || "Registrierung fehlgeschlagen.");
+            }
+        } catch (err: any) {
+            setAuthError(err.message || "Ein Fehler ist aufgetreten.");
+        } finally {
+            setIsAuthLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        setAuthUser(null);
+        // Hier würdest du auch Tokens etc. löschen, falls verwendet
+    };
+
+    // Wenn Benutzer nicht angemeldet ist, zeige Login/Registrierung
+    if (!authUser) {
+        return (
+            <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
+                {authError && <p style={{ color: 'red' }}>{authError}</p>}
+                {showRegisterForm ? (
+                    <form onSubmit={handleRegisterSubmit}>
+                        <h2>Registrieren</h2>
+                        <input type="email" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} placeholder="E-Mail" required style={{ width: '100%', padding: '8px', marginBottom: '10px', boxSizing: 'border-box' }} />
+                        <input type="text" value={registerFirstName} onChange={(e) => setRegisterFirstName(e.target.value)} placeholder="Vorname (optional)" style={{ width: '100%', padding: '8px', marginBottom: '10px', boxSizing: 'border-box' }} />
+                        <input type="text" value={registerLastName} onChange={(e) => setRegisterLastName(e.target.value)} placeholder="Nachname (optional)" style={{ width: '100%', padding: '8px', marginBottom: '10px', boxSizing: 'border-box' }} />
+                        <input type="password" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} placeholder="Passwort" required style={{ width: '100%', padding: '8px', marginBottom: '10px', boxSizing: 'border-box' }} />
+                        <input type="password" value={registerPasswordConfirm} onChange={(e) => setRegisterPasswordConfirm(e.target.value)} placeholder="Passwort bestätigen" required style={{ width: '100%', padding: '8px', marginBottom: '10px', boxSizing: 'border-box' }} />
+                        <button type="submit" disabled={isAuthLoading} style={{ width: '100%', padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                            {isAuthLoading ? 'Registriere...' : 'Registrieren'}
+                        </button>
+                        <p style={{ textAlign: 'center', marginTop: '10px' }}>
+                            Schon einen Account? <button type="button" onClick={() => setShowRegisterForm(false)} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>Einloggen</button>
+                        </p>
+                    </form>
+                ) : (
+                    <form onSubmit={handleLoginSubmit}>
+                        <h2>Login</h2>
+                        <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="E-Mail" required style={{ width: '100%', padding: '8px', marginBottom: '10px', boxSizing: 'border-box' }} />
+                        <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Passwort" required style={{ width: '100%', padding: '8px', marginBottom: '10px', boxSizing: 'border-box' }} />
+                        <button type="submit" disabled={isAuthLoading} style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                            {isAuthLoading ? 'Logge ein...' : 'Login'}
+                        </button>
+                        <p style={{ textAlign: 'center', marginTop: '10px' }}>
+                            Noch keinen Account? <button type="button" onClick={() => setShowRegisterForm(true)} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>Registrieren</button>
+                        </p>
+                    </form>
+                )}
+            </div>
+        );
+    }
+
+    // Wenn Benutzer angemeldet ist, zeige eine Willkommensnachricht und den Logout-Button
+    return (
+        <div>
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h1>Willkommen, {authUser.firstName || authUser.email}!</h1>
+                <button onClick={handleLogout} style={{ padding: '8px 15px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                    Logout
+                </button>
+            </div>
+            <p>Du bist erfolgreich eingeloggt. Nutze die Navigation, um zu deinen Tasks oder Teams zu gelangen.</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    );
 }
