@@ -15,8 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import de.hsesslingen.focusflowbackend.dto.TaskUpdateRequestDTO;
 
 import java.util.HashMap;
 import java.util.List;
@@ -96,5 +99,29 @@ public class TaskController {
         return taskRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> updateTask(
+            @PathVariable Long id,
+            @RequestBody TaskUpdateRequestDTO dto) {
+        try {
+            // load existing task
+            Task existing = taskRepository.findById(id)
+                    .orElseThrow(() -> new NoSuchElementException("Task not found: " + id));
+
+            taskService.updateTask(existing, dto);
+            return ResponseEntity.noContent().build();
+        } catch (NoSuchElementException e) {
+            LOGGER.warn("Update failed, not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Invalid update data: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error on update: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

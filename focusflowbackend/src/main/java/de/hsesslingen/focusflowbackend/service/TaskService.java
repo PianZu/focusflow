@@ -1,6 +1,7 @@
 package de.hsesslingen.focusflowbackend.service;
 
 import de.hsesslingen.focusflowbackend.dto.TaskCreationRequestDTO;
+import de.hsesslingen.focusflowbackend.dto.TaskUpdateRequestDTO;
 import de.hsesslingen.focusflowbackend.model.Team;
 import de.hsesslingen.focusflowbackend.model.User;
 import de.hsesslingen.focusflowbackend.model.tasks.Task;
@@ -94,4 +95,39 @@ public class TaskService {
         Set<Team> user1Teams = user1.getTeams();
         return user2.getTeams().stream().anyMatch(user1Teams::contains);
     }
+
+public void updateTask(Task existing, TaskUpdateRequestDTO dto) {
+        if (dto.getTitle() != null) {
+            existing.setTitle(dto.getTitle());
+        }
+        if (dto.getDescription() != null) {
+            existing.setDescription(dto.getDescription());
+        }
+        if (dto.getLongDescription() != null) {
+            existing.setLongDescription(dto.getLongDescription());
+        }
+        if (dto.getDueDate() != null) {
+            existing.setDueDate(dto.getDueDate().atStartOfDay());
+        }
+        if (dto.getAssigneeId() != null) {
+            User assignee = userRepository.findById(dto.getAssigneeId())
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "Assignee not found with ID: " + dto.getAssigneeId()));
+            existing.setAssignee(assignee);
+        }
+        if (dto.getTeamId() != null) {
+            Team team = teamRepository.findById(dto.getTeamId())
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "Team not found with ID: " + dto.getTeamId()));
+            existing.setTeam(team);
+        }
+        if (dto.getPriority() != null) {
+            existing.setPriority(dto.getPriority());
+        }
+        if (dto.getStatus() != null) {
+            existing.setStatus(dto.getStatus());
+        }
+        taskRepository.save(existing);
+    }
+
 }

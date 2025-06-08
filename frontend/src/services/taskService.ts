@@ -1,163 +1,137 @@
-// Definiere eine Basis-URL für deine API.
-// In einem echten Projekt würdest du dies wahrscheinlich aus Umgebungsvariablen beziehen.
+// src/services/taskService.ts
+
+// Basis-URL für deine API (aus .env oder Fallback)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
-// Interface für die Daten, die zum Erstellen eines Tasks gesendet werden.
-// Dies sollte die Struktur deines `TaskCreationRequestDTO` im Backend widerspiegeln.
+// Enums für Task Priority und Status (entsprechend dem Backend)
+export enum TaskPriority {
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+}
+
+export enum TaskStatus {
+  OPEN = "OPEN",
+  PENDING = "PENDING",
+  IN_REVIEW = "IN_REVIEW",
+  CLOSED = "CLOSED",
+}
+
+// --- Typen ---
+
+/** Payload zum Erstellen eines Tasks */
 export interface TaskCreationData {
-    title: string;
-    description?: string;
-    dueDate?: string; // z.B. "2024-12-31T23:59:59"
-    assigneeEmail?: string; // E-Mail des zugewiesenen Benutzers
-    creatorId: number; // ID des Erstellers
-    priority?: string; // z.B. 'HIGH', 'MEDIUM', 'LOW'
-    status?: string; // z.B. 'TODO', 'IN_PROGRESS', 'DONE'
-    simulateNotificationFailure?: boolean;
-    // Füge hier weitere Felder hinzu, die dein DTO erwartet
+  title: string;
+  description?: string;
+  longDescription?: string;
+  dueDate?: string;       // ISO-String YYYY-MM-DD
+  assigneeId?: number;
+  teamId?: number;
+  creatorId: number;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  simulateNotificationFailure?: boolean;
 }
 
-// Interface für die Antwort beim Erstellen eines Tasks
+/** Payload zum Aktualisieren eines Tasks */
+export interface TaskUpdateData {
+  title?: string;
+  description?: string;
+  longDescription?: string;
+  dueDate?: string;
+  assigneeId?: number;
+  teamId?: number;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+}
+
+/** Antwort nach Task-Erstellung */
 export interface CreateTaskResponse {
-    taskId: number;
-    message: string;
-    warning?: string; // Falls die Benachrichtigung fehlschlägt
-    error?: string;   // Falls ein Fehler aufgetreten ist (vom Backend gesendet)
+  taskId: number;
+  message: string;
+  warning?: string;
+  error?: string;
 }
 
-// Interface für ein User-Zusammenfassungsobjekt
-export interface UserSummary {
-    id: number;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    // ... weitere User-Felder bei Bedarf
-}
-
-// Interface für ein Task-Objekt (basierend auf deinem Backend-Modell)
+/** Minimaler Task-Typ für das Frontend */
 export interface Task {
-    id: number;
-    title: string;
-    description?: string;
-    dueDate?: string;
-    creationDate?: string;
-    lastModifiedDate?: string;
-    priority?: string;
-    status?: string;
-    creator?: UserSummary;
-    assignee?: UserSummary;
-    // ... weitere Felder deines Task-Modells
+  id: number;
+  title: string;
+  description?: string;
+  longDescription?: string;
+  dueDate?: string;
+  creationDate?: string;
+  lastModifiedDate?: string;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  creator?: { id: number; email: string };
+  assignee?: { id: number; email: string };
+  team?: { id: number; name: string };
 }
 
-/**
- * Erstellt einen neuen Task.
- * Entspricht POST /api/tasks
- */
-export async function createTask(taskData: TaskCreationData): Promise<CreateTaskResponse> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/tasks`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // Füge hier ggf. Authentifizierungs-Header hinzu (z.B. Authorization: `Bearer ${token}`)
-            },
-            body: JSON.stringify(taskData),
-        });
-
-        const responseBody = await response.json();
-
-        if (!response.ok) {
-            // responseBody könnte ein "error"-Feld vom Controller enthalten
-            console.error('Fehler beim Erstellen des Tasks:', responseBody);
-            throw new Error(responseBody.error || `HTTP-Fehler! Status: ${response.status}`);
-        }
-
-        return responseBody as CreateTaskResponse;
-    } catch (error) {
-        console.error('Netzwerk- oder Parser-Fehler beim Erstellen des Tasks:', error);
-        throw error; // Wirf den Fehler weiter, damit die aufrufende Komponente ihn behandeln kann
-    }
+// --- Helper für fetch (DRY) ---
+async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const msg = (data && (data.error || data.message)) || res.statusText;
+    throw new Error(`HTTP-Fehler ${res.status}: ${msg}`);
+  }
+  return data as T;
 }
 
-/**
- * Ruft alle Tasks für einen bestimmten Benutzer ab.
- * Entspricht GET /api/tasks/user?userId={userId}
- */
-export async function getTasksForUser(userId: number): Promise<Task[]> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/tasks/user?userId=${userId}`, {
-            method: 'GET',
-            headers: {
-                // Füge hier ggf. Authentifizierungs-Header hinzu
-            },
-        });
+// --- Service-Funktionen ---
 
-        if (!response.ok) {
-            // Dein Backend wirft bei "User not found" eine NoSuchElementException,
-            // was serverseitig zu einem 500er-Fehler führen kann.
-            // Idealerweise würde das Backend 404 zurückgeben.
-            const errorText = await response.text();
-            console.error('Fehler beim Abrufen der Tasks für Benutzer:', errorText);
-            throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorText}`);
-        }
-
-        return await response.json() as Task[];
-    } catch (error) {
-        console.error('Netzwerk- oder Parser-Fehler beim Abrufen der Tasks für Benutzer:', error);
-        throw error;
-    }
+/** Erstelle einen neuen Task */
+export function createTask(
+  taskData: TaskCreationData
+): Promise<CreateTaskResponse> {
+  return apiFetch<CreateTaskResponse>(`/api/tasks`, {
+    method: 'POST',
+    body: JSON.stringify(taskData),
+  });
 }
 
-/**
- * Ruft alle Tasks im System ab.
- * Entspricht GET /api/tasks/all
- */
-export async function getAllTasks(): Promise<Task[]> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/tasks/all`, {
-            method: 'GET',
-            headers: {
-                // Füge hier ggf. Authentifizierungs-Header hinzu
-            },
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Fehler beim Abrufen aller Tasks:', errorText);
-            throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorText}`);
-        }
-
-        return await response.json() as Task[];
-    } catch (error) {
-        console.error('Netzwerk- oder Parser-Fehler beim Abrufen aller Tasks:', error);
-        throw error;
-    }
+/** Lade Tasks für einen bestimmten User */
+export function getTasksForUser(
+  userId: number
+): Promise<Task[]> {
+  return apiFetch<Task[]>(`/api/tasks/user?userId=${userId}`);
 }
 
-/**
- * Ruft einen bestimmten Task anhand seiner ID ab.
- * Entspricht GET /api/tasks?id={id}
- */
-export async function getTaskById(taskId: number): Promise<Task> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/tasks?id=${taskId}`, {
-            method: 'GET',
-            headers: {
-                // Füge hier ggf. Authentifizierungs-Header hinzu
-            },
-        });
+/** Lade alle Tasks */
+export function getAllTasks(): Promise<Task[]> {
+  return apiFetch<Task[]>(`/api/tasks/all`);
+}
 
-        if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error(`Task mit ID ${taskId} nicht gefunden.`);
-            }
-            const errorText = await response.text();
-            console.error(`Fehler beim Abrufen des Tasks mit ID ${taskId}:`, errorText);
-            throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorText}`);
-        }
+/** Lade einen Task anhand der ID */
+export function getTaskById(
+  taskId: number
+): Promise<Task> {
+  return apiFetch<Task>(`/api/tasks/${taskId}`);
+}
 
-        return await response.json() as Task;
-    } catch (error) {
-        console.error(`Netzwerk- oder Parser-Fehler beim Abrufen des Tasks mit ID ${taskId}:`, error);
-        throw error;
-    }
+/** Aktualisiere einen bestehenden Task */
+export function updateTask(
+  taskId: number,
+  data: TaskUpdateData
+): Promise<void> {
+  return apiFetch<void>(`/api/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+/** Lade Tasks, denen der User assigned ist (falls benötigt) */
+export function getAssignedTasks(
+  userId: number
+): Promise<Task[]> {
+  return apiFetch<Task[]>(`/api/tasks?assigneeId=${userId}`);
 }
