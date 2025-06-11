@@ -1,9 +1,7 @@
 // src/services/taskService.ts
 
-// Basis-URL für deine API (aus .env oder Fallback)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
-// Enums für Task Priority und Status (entsprechend dem Backend)
 export enum TaskPriority {
   LOW = "LOW",
   MEDIUM = "MEDIUM",
@@ -17,14 +15,11 @@ export enum TaskStatus {
   CLOSED = "CLOSED",
 }
 
-// --- Typen ---
-
-/** Payload zum Erstellen eines Tasks */
 export interface TaskCreationData {
   title: string;
   description?: string;
   longDescription?: string;
-  dueDate?: string;       // ISO-String YYYY-MM-DD
+  dueDate?: string;
   assigneeId?: number;
   teamId?: number;
   creatorId: number;
@@ -33,7 +28,6 @@ export interface TaskCreationData {
   simulateNotificationFailure?: boolean;
 }
 
-/** Payload zum Aktualisieren eines Tasks */
 export interface TaskUpdateData {
   title?: string;
   description?: string;
@@ -45,7 +39,6 @@ export interface TaskUpdateData {
   status?: TaskStatus;
 }
 
-/** Antwort nach Task-Erstellung */
 export interface CreateTaskResponse {
   taskId: number;
   message: string;
@@ -53,7 +46,6 @@ export interface CreateTaskResponse {
   error?: string;
 }
 
-/** Minimaler Task-Typ für das Frontend */
 export interface Task {
   id: number;
   title: string;
@@ -69,7 +61,6 @@ export interface Task {
   team?: { id: number; name: string };
 }
 
-// --- Helper für fetch (DRY) ---
 async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
@@ -87,9 +78,6 @@ async function apiFetch<T>(
   return data as T;
 }
 
-// --- Service-Funktionen ---
-
-/** Erstelle einen neuen Task */
 export function createTask(
   taskData: TaskCreationData
 ): Promise<CreateTaskResponse> {
@@ -99,39 +87,45 @@ export function createTask(
   });
 }
 
-/** Lade Tasks für einen bestimmten User */
-export function getTasksForUser(
-  userId: number
-): Promise<Task[]> {
-  return apiFetch<Task[]>(`/api/tasks/user?userId=${userId}`);
-}
-
-/** Lade alle Tasks */
 export function getAllTasks(): Promise<Task[]> {
-  return apiFetch<Task[]>(`/api/tasks/all`);
+  return apiFetch<Task[]>(`/api/tasks/all`, {
+    // Cache ausschalten, damit wir immer frische Daten bekommen
+    cache: 'no-cache',
+  });
 }
 
-/** Lade einen Task anhand der ID */
-export function getTaskById(
-  taskId: number
-): Promise<Task> {
-  return apiFetch<Task>(`/api/tasks/${taskId}`);
-}
-
-/** Aktualisiere einen bestehenden Task */
 export function updateTask(
   taskId: number,
   data: TaskUpdateData
 ): Promise<void> {
+  // bleibt void, wir machen das UI-Merge im Frontend
   return apiFetch<void>(`/api/tasks/${taskId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
 }
 
-/** Lade Tasks, denen der User assigned ist (falls benötigt) */
+export function getTaskById(
+  taskId: number
+): Promise<Task> {
+  return apiFetch<Task>(`/api/tasks/${taskId}`);
+}
+
+export function getTasksForUser(
+  userId: number
+): Promise<Task[]> {
+  return apiFetch<Task[]>(`/api/tasks/user?userId=${userId}`);
+}
+
 export function getAssignedTasks(
   userId: number
 ): Promise<Task[]> {
   return apiFetch<Task[]>(`/api/tasks?assigneeId=${userId}`);
+}
+
+/** Löscht einen Task per ID */
+export function deleteTask(taskId: number): Promise<void> {
+  return apiFetch<void>(`/api/tasks/${taskId}`, {
+    method: 'DELETE'
+  });
 }

@@ -1,5 +1,4 @@
 // src/app/tasks/page.tsx
-
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -7,6 +6,7 @@ import {
   createTask,
   getAllTasks,
   updateTask,
+  deleteTask,
   Task,
   TaskCreationData,
   TaskUpdateData,
@@ -20,7 +20,7 @@ export default function TasksPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Create form state
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTask, setNewTask] = useState<TaskCreationData>({
     title: '',
     description: undefined,
@@ -28,13 +28,12 @@ export default function TasksPage() {
     dueDate: '',
     assigneeId: undefined,
     teamId: undefined,
-    creatorId: 1,        // TODO: replace with real auth
+    creatorId: 1,
     priority: undefined,
     status: TaskStatus.OPEN,
     simulateNotificationFailure: false
   });
 
-  // Edit state
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<TaskUpdateData>({});
 
@@ -65,7 +64,18 @@ export default function TasksPage() {
     try {
       const res: CreateTaskResponse = await createTask(newTask);
       if (res.warning) alert(`Warnung: ${res.warning}`);
-      setNewTask({ ...newTask, title: '', description: undefined, longDescription: undefined, dueDate: '', assigneeId: undefined, teamId: undefined, priority: undefined, status: TaskStatus.OPEN });
+      setNewTask({
+        ...newTask,
+        title: '',
+        description: undefined,
+        longDescription: undefined,
+        dueDate: '',
+        assigneeId: undefined,
+        teamId: undefined,
+        priority: undefined,
+        status: TaskStatus.OPEN
+      });
+      setShowCreateForm(false);
       await fetchTasks();
     } catch (e: any) {
       setError(e.message);
@@ -99,7 +109,21 @@ export default function TasksPage() {
     setError(null);
     try {
       await updateTask(editingId, editData);
+      await fetchTasks();
       cancelEdit();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Task wirklich löschen?')) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      await deleteTask(id);
       await fetchTasks();
     } catch (e: any) {
       setError(e.message);
@@ -109,125 +133,324 @@ export default function TasksPage() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: 20 }}>
-      <h1>Tasks verwalten</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <div className="container">
+      <h1 className="title">Tasks verwalten</h1>
+      {error && <p className="error">{error}</p>}
 
-      {/* Create Section */}
-      <section style={{ margin: '20px 0', padding: 20, border: '1px solid #ccc', borderRadius: 8 }}>
-        <h2>Neuen Task erstellen</h2>
-        <input
-          type="text"
-          placeholder="Titel *"
-          value={newTask.title}
-          onChange={e => setNewTask({ ...newTask, title: e.target.value })}
-          disabled={isLoading}
-          style={{ width: '100%', marginBottom: 10, padding: 8 }}
-        />
-        <input
-          type="text"
-          placeholder="Kurzbeschreibung"
-          value={newTask.description || ''}
-          onChange={e => setNewTask({ ...newTask, description: e.target.value })}
-          disabled={isLoading}
-          style={{ width: '100%', marginBottom: 10, padding: 8 }}
-        />
-        <textarea
-          placeholder="Langbeschreibung"
-          value={newTask.longDescription || ''}
-          onChange={e => setNewTask({ ...newTask, longDescription: e.target.value })}
-          disabled={isLoading}
-          rows={3}
-          style={{ width: '100%', marginBottom: 10, padding: 8 }}
-        />
-        <input
-          type="date"
-          value={newTask.dueDate || ''}
-          onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })}
-          disabled={isLoading}
-          style={{ width: '100%', marginBottom: 10, padding: 8 }}
-        />
-        <input
-          type="number"
-          placeholder="Assignee ID *"
-          value={newTask.assigneeId || ''}
-          onChange={e => setNewTask({ ...newTask, assigneeId: e.target.value ? +e.target.value : undefined })}
-          disabled={isLoading}
-          style={{ width: '100%', marginBottom: 10, padding: 8 }}
-        />
-        <input
-          type="number"
-          placeholder="Team ID"
-          value={newTask.teamId || ''}
-          onChange={e => setNewTask({ ...newTask, teamId: e.target.value ? +e.target.value : undefined })}
-          disabled={isLoading}
-          style={{ width: '100%', marginBottom: 10, padding: 8 }}
-        />
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          <select
-            value={newTask.priority || ''}
-            onChange={e => setNewTask({ ...newTask, priority: e.target.value as TaskPriority })}
-            disabled={isLoading}
-            style={{ flex: 1, padding: 8 }}
-          >
-            <option value="">Priorität</option>
-            {Object.values(TaskPriority).map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-          <select
-            value={newTask.status}
-            onChange={e => setNewTask({ ...newTask, status: e.target.value as TaskStatus })}
-            disabled={isLoading}
-            style={{ flex: 1, padding: 8 }}
-          >
-            {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-        <button onClick={handleCreate} disabled={isLoading} style={{ padding: '10px', width: '100%', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-          {isLoading ? 'Speichern...' : 'Task erstellen'}
-        </button>
-      </section>
+      <button
+        className={`btn toggle ${showCreateForm ? 'btn-secondary' : 'btn-primary'}`}
+        onClick={() => setShowCreateForm(v => !v)}
+      >
+        {showCreateForm ? 'Abbrechen' : 'Neuen Task erstellen'}
+      </button>
 
-      {/* List & Edit */}
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {isLoading && tasks.length === 0 && <li>Lade Tasks...</li>}
-        {tasks.map(task => (
-          <li key={task.id} style={{ marginBottom: 10, padding: 10, border: '1px solid #eee', borderRadius: 4 }}>
-            {editingId === task.id ? (
-              <>  {/* Edit form */}
-                <input
-                  type="text"
-                  value={editData.title || ''}
-                  onChange={e => setEditData({ ...editData, title: e.target.value })}
-                  style={{ width: '100%', marginBottom: 6, padding: 6 }}
-                />
-                <textarea
-                  rows={2}
-                  value={editData.longDescription || ''}
-                  onChange={e => setEditData({ ...editData, longDescription: e.target.value })}
-                  style={{ width: '100%', marginBottom: 6, padding: 6 }}
-                />
-                <input
-                  type="date"
-                  value={editData.dueDate || ''}
-                  onChange={e => setEditData({ ...editData, dueDate: e.target.value })}
-                  style={{ width: '100%', marginBottom: 6, padding: 6 }}
-                />
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={saveEdit} disabled={isLoading}>Speichern</button>
-                  <button onClick={cancelEdit} disabled={isLoading}>Abbrechen</button>
+      {showCreateForm && (
+        <section className="create-form">
+          <h2>Neuen Task anlegen</h2>
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Titel *</label>
+              <input
+                type="text"
+                value={newTask.title}
+                onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Assignee ID *</label>
+              <input
+                type="number"
+                value={newTask.assigneeId || ''}
+                onChange={e => setNewTask({ ...newTask, assigneeId: e.target.value ? +e.target.value : undefined })}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Fälligkeitsdatum *</label>
+              <input
+                type="date"
+                value={newTask.dueDate}
+                onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Team ID</label>
+              <input
+                type="number"
+                value={newTask.teamId || ''}
+                onChange={e => setNewTask({ ...newTask, teamId: e.target.value ? +e.target.value : undefined })}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Priorität</label>
+              <select
+                value={newTask.priority || ''}
+                onChange={e => setNewTask({ ...newTask, priority: e.target.value as TaskPriority })}
+                disabled={isLoading}
+              >
+                <option value="">–</option>
+                {Object.values(TaskPriority).map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Status</label>
+              <select
+                value={newTask.status}
+                onChange={e => setNewTask({ ...newTask, status: e.target.value as TaskStatus })}
+                disabled={isLoading}
+              >
+                {Object.values(TaskStatus).map(s => (
+                  <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group full">
+              <label>Kurzbeschreibung</label>
+              <input
+                type="text"
+                value={newTask.description || ''}
+                onChange={e => setNewTask({ ...newTask, description: e.target.value })}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group full">
+              <label>Langbeschreibung</label>
+              <textarea
+                rows={3}
+                value={newTask.longDescription || ''}
+                onChange={e => setNewTask({ ...newTask, longDescription: e.target.value })}
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          <button
+            className="btn btn-primary full"
+            onClick={handleCreate}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Speichern...' : 'Task erstellen'}
+          </button>
+        </section>
+      )}
+
+      <ul className="task-list">
+        {isLoading && tasks.length === 0 && <li>Lade Tasks…</li>}
+        {tasks.map(task => {
+          const statusClass = task.status?.toLowerCase().replace('_', '-');
+          return (
+            <li key={task.id} className="task-card">
+              {editingId === task.id ? (
+                <div className="edit-form">
+                  <input
+                    type="text"
+                    value={editData.title || ''}
+                    onChange={e => setEditData({ ...editData, title: e.target.value })}
+                    placeholder="Titel"
+                  />
+                  <input
+                    type="text"
+                    value={editData.description || ''}
+                    onChange={e => setEditData({ ...editData, description: e.target.value })}
+                    placeholder="Kurzbeschreibung"
+                  />
+                  <textarea
+                    rows={2}
+                    value={editData.longDescription || ''}
+                    onChange={e => setEditData({ ...editData, longDescription: e.target.value })}
+                    placeholder="Langbeschreibung"
+                  />
+                  <input
+                    type="date"
+                    value={editData.dueDate || ''}
+                    onChange={e => setEditData({ ...editData, dueDate: e.target.value })}
+                  />
+
+                  <select
+                    value={editData.priority || ''}
+                    onChange={e => setEditData({ ...editData, priority: e.target.value as TaskPriority })}
+                  >
+                    <option value="">Priorität</option>
+                    {Object.values(TaskPriority).map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={editData.status || ''}
+                    onChange={e => setEditData({ ...editData, status: e.target.value as TaskStatus })}
+                  >
+                    <option value="">Status</option>
+                    {Object.values(TaskStatus).map(s => (
+                      <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                    ))}
+                  </select>
+
+                  <div className="task-actions">
+                    <button className="btn btn-primary" onClick={saveEdit}>Speichern</button>
+                    <button className="btn btn-secondary" onClick={cancelEdit}>Abbrechen</button>
+                  </div>
                 </div>
-              </>
-            ) : (
-              <>  {/* Display view */}
-                <strong>{task.title}</strong><br/>
-                {task.description && <small>{task.description}</small>}<br/>
-                {task.dueDate && <small>Fällig: {task.dueDate.split('T')[0]}</small>}<br/>
-                <button onClick={() => startEdit(task)}>Bearbeiten</button>
-              </>
-            )}
-          </li>
-        ))}
+              ) : (
+                <>
+                  <div className="task-info">
+                    <div className="task-header">
+                      <h3>{task.title}</h3>
+                      <span className={`badge badge-${statusClass}`}>
+                        {task.status?.replace('_', ' ')}
+                      </span>
+                    </div>
+                    {task.description && <p className="desc">{task.description}</p>}
+                    {task.longDescription && <p className="desc small">{task.longDescription}</p>}
+                    {task.dueDate && <p className="due">Fällig: {task.dueDate.split('T')[0]}</p>}
+                  </div>
+                  <div className="task-actions">
+                    <button className="btn btn-secondary" onClick={() => startEdit(task)}>Bearbeiten</button>
+                    <button className="btn btn-danger" onClick={() => handleDelete(task.id)}>Löschen</button>
+                  </div>
+                </>
+              )}
+            </li>
+          );
+        })}
       </ul>
+
+      <style jsx>{`
+        .container {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 20px;
+          font-family: sans-serif;
+          color: #222;              /* dunkler Grundtext */
+        }
+        .title {
+          text-align: center;
+          margin-bottom: 20px;
+          color: #111;
+        }
+        .error {
+          color: #b00020;
+          text-align: center;
+        }
+        .btn {
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          padding: 8px 12px;
+          font-size: 0.9rem;
+        }
+        .btn-primary { background: #007bff; color: #fff; }
+        .btn-secondary { background: #6c757d; color: #fff; }
+        .btn-danger { background: #dc3545; color: #fff; }
+        .toggle { margin-bottom: 20px; }
+        .full { width: 100%; }
+
+        .create-form {
+          background: #f9f9f9;
+          padding: 20px;
+          border-radius: 8px;
+          margin-bottom: 40px;
+        }
+        .form-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+        .form-group label {
+          display: block;
+          margin-bottom: 4px;
+          font-weight: 600;
+          color: #222;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          color: #222;            /* dunklere Eingabetexte */
+        }
+
+        .task-list {
+          list-style: none;
+          padding: 0;
+        }
+        .task-card {
+          background: #fff;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          padding: 16px;
+          margin-bottom: 16px;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .task-info {
+          max-width: 70%;
+        }
+        .task-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+        .task-header h3 {
+          margin: 0;
+          font-size: 1.1rem;
+          color: #111;
+        }
+        .badge {
+          font-size: 0.75rem;
+          padding: 2px 6px;
+          border-radius: 4px;
+          color: #fff;
+        }
+        .badge-open    { background: #28a745; }
+        .badge-pending { background: #ffc107; color: #212529; }
+        .badge-in-review { background: #17a2b8; }
+        .badge-closed  { background: #6c757d; }
+
+        .desc {
+          margin: 4px 0;
+          color: #333;             /* dunklerer Absatztext */
+        }
+        .desc.small {
+          font-size: 0.85rem;
+          color: #444;            /* etwas dunkler als vorher */
+        }
+        .due {
+          font-size: 0.85rem;
+          color: #333;            /* gleiches Level wie desc */
+        }
+
+        .task-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .edit-form input,
+        .edit-form textarea {
+          width: 100%;
+          margin-bottom: 8px;
+          padding: 8px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          color: #222;
+        }
+      `}</style>
     </div>
   );
 }

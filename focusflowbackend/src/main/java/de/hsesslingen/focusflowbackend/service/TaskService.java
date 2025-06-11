@@ -11,6 +11,7 @@ import de.hsesslingen.focusflowbackend.repository.TeamRepository;
 import de.hsesslingen.focusflowbackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -96,7 +97,7 @@ public class TaskService {
         return user2.getTeams().stream().anyMatch(user1Teams::contains);
     }
 
-public void updateTask(Task existing, TaskUpdateRequestDTO dto) {
+    public void updateTask(Task existing, TaskUpdateRequestDTO dto) {
         if (dto.getTitle() != null) {
             existing.setTitle(dto.getTitle());
         }
@@ -128,6 +129,14 @@ public void updateTask(Task existing, TaskUpdateRequestDTO dto) {
             existing.setStatus(dto.getStatus());
         }
         taskRepository.save(existing);
+    }
+
+    @Transactional
+    public void deleteTask(Long taskId) {
+        if (!taskRepository.existsById(taskId)) {
+            throw new NoSuchElementException("Task nicht gefunden mit ID: " + taskId);
+        }
+        taskRepository.deleteById(taskId);
     }
 
 }
