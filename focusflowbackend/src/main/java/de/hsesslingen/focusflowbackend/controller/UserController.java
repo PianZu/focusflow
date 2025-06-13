@@ -36,6 +36,14 @@ public class UserController {
                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
+    // GET: Get user by email
+    @GetMapping("/email")
+    public ResponseEntity<User> getUserByEmail(@RequestParam String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        return user.map(ResponseEntity::ok)
+                   .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
     // POST: Register a new user with valid credentials
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequestDTO registrationRequest) {
@@ -64,9 +72,7 @@ public class UserController {
             userService.registerUser(newUser);
 
             // Successful registration
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .header("Location", "/login")
-                    .build();
+            return ResponseEntity.ok("Registration successful!");
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
