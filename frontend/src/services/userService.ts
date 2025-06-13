@@ -7,7 +7,7 @@ export interface UserRegistrationData {
     email: string;
     firstName?: string;
     lastName?: string;
-    password_P: string; // Benenne es so, dass es nicht mit 'password' aus anderen Kontexten kollidiert
+    password: string; // Benenne es so, dass es nicht mit 'password' aus anderen Kontexten kollidiert
     passwordConfirm: string;
 }
 
@@ -46,7 +46,7 @@ export async function registerUser(userData: UserRegistrationData): Promise<{ su
                 email: userData.email,
                 firstName: userData.firstName,
                 lastName: userData.lastName,
-                password: userData.password_P, // Sicherstellen, dass Backend 'password' erwartet
+                password: userData.password, // Sicherstellen, dass Backend 'password' erwartet
                 passwordConfirm: userData.passwordConfirm,
             }),
         });
