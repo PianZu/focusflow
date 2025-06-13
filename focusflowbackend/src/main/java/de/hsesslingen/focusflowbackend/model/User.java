@@ -1,25 +1,20 @@
 package de.hsesslingen.focusflowbackend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
 import de.hsesslingen.focusflowbackend.model.tasks.Task;
 
 @Entity
 @Data
 @EqualsAndHashCode(exclude = {"teams", "tasks"})
 @Table(name = "users")
-// This class represents a user in the system
 public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -41,10 +36,10 @@ public class User {
     private LocalDateTime lastLogin;
 
     @ManyToMany(mappedBy = "members")
-    @JsonBackReference
+    @JsonIgnore  // verhindert Rückserialisierung von Team → User → Team
     private Set<Team> teams = new HashSet<>();
 
     @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL)
-    @JsonBackReference
+    @JsonIgnore  // verhindert Rückserialisierung von Task → User → Task
     private Set<Task> tasks = new HashSet<>();
 }

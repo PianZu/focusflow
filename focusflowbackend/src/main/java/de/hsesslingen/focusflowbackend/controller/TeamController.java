@@ -3,6 +3,7 @@ package de.hsesslingen.focusflowbackend.controller;
 import de.hsesslingen.focusflowbackend.model.Team;
 import de.hsesslingen.focusflowbackend.service.TeamService;
 import de.hsesslingen.focusflowbackend.dto.TeamCreationRequestDTO;
+import de.hsesslingen.focusflowbackend.dto.TeamMemberRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -68,4 +69,27 @@ public class TeamController {
     public ResponseEntity<List<Team>> getUserTeams(@RequestParam Long userId) {
         return ResponseEntity.ok(teamService.getTeamsForUser(userId));
     }
+
+    @PostMapping("/{id}/members")
+    public ResponseEntity<?> addMembers(
+            @PathVariable("id") Long teamId,
+            @RequestBody TeamMemberRequestDTO request
+    ) {
+        Team updated = teamService.addMembers(teamId, request.getMemberEmails());
+        return ResponseEntity.ok(Map.of(
+            "message", "Mitglieder hinzugefügt",
+            "teamId", updated.getId(),
+            "memberCount", updated.getMembers().size()
+        ));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTeam(@PathVariable Long id) {
+    try {
+        teamService.deleteTeam(id);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+}
 }

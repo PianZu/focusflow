@@ -5,7 +5,6 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import de.hsesslingen.focusflowbackend.model.Team;
 import de.hsesslingen.focusflowbackend.model.User;
@@ -35,14 +34,17 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskStatus status;
 
-    @ManyToOne
+    
+    // Owning side of Task → User (Assignee)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
-    @JsonManagedReference
+    @JsonBackReference("user-tasks")
     private User assignee;
 
-    @ManyToOne
+    // Owning side of Task → Team
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
-    @JsonBackReference
+    @JsonBackReference("team-tasks")
     // The task can be assigned to a team, but it's not mandatory
     private Team team;   
 }

@@ -6,6 +6,7 @@ import de.hsesslingen.focusflowbackend.repository.TeamRepository;
 import de.hsesslingen.focusflowbackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -49,6 +50,20 @@ public class TeamService {
         return teamRepository.save(team);
     }
 
+    @Transactional
+    public Team addMembers(Long teamId, List<String> memberEmails) {
+        Team team = teamRepository.findById(teamId)
+            .orElseThrow(() -> new RuntimeException("Team nicht gefunden: " + teamId));
+
+        for (String email : memberEmails) {
+            User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User nicht gefunden: " + email));
+            // Fügt intern in team.getMembers() ein, Hibernate erzeugt später INSERT in team_members
+            team.getMembers().add(user);
+        }
+        return teamRepository.save(team);
+    }
+
     // Method: Get all teams for a specific user
     public List<Team> getTeamsForUser(Long userId) {
         return teamRepository.findAll().stream()
@@ -65,4 +80,13 @@ public class TeamService {
     public List<Team> getAllTeams() {
         return teamRepository.findAll();
     }
+
+    @Transactional
+    public void deleteTeam(Long teamId) {
+    if (!teamRepository.existsById(teamId)) {
+        throw new RuntimeException("Team nicht gefunden: " + teamId);
+    }
+    teamRepository.deleteById(teamId);
+}
+
 }
