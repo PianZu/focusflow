@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -50,6 +51,7 @@ public class TeamService {
         return teamRepository.save(team);
     }
 
+    // Method: Add members to an existing team by their email addresses
     @Transactional
     public Team addMembers(Long teamId, List<String> memberEmails) {
         Team team = teamRepository.findById(teamId)
@@ -81,6 +83,17 @@ public class TeamService {
         return teamRepository.findAll();
     }
 
+    
+    // Method: Get all members of a team
+    public List<Long> getTeamMembers(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new NoSuchElementException("Team not found with ID: " + teamId));
+        return team.getMembers().stream()
+                .map(User::getId)
+                .toList();
+    }
+
+    // Method: Delete a team by its ID
     @Transactional
     public void deleteTeam(Long teamId) {
     if (!teamRepository.existsById(teamId)) {

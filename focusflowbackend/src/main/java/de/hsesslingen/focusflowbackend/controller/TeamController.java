@@ -70,6 +70,13 @@ public class TeamController {
         return ResponseEntity.ok(teamService.getTeamsForUser(userId));
     }
 
+    // GET: Get all members of a team
+    @GetMapping("/members")
+    public ResponseEntity<List<Long>> getTeamMembers(@RequestParam Long teamId) {
+        return ResponseEntity.ok(teamService.getTeamMembers(teamId));
+    }
+
+    // POST: Add members to a team
     @PostMapping("/{id}/members")
     public ResponseEntity<?> addMembers(
             @PathVariable("id") Long teamId,
@@ -83,6 +90,7 @@ public class TeamController {
         ));
     }
 
+    // DELETE: Delete a team by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTeam(@PathVariable Long id) {
     try {
