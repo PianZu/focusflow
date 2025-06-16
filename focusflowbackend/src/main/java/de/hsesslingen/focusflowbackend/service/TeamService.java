@@ -17,28 +17,22 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-// This service class is responsible for handling team-related operations
 public class TeamService {
 
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
 
-    // Method: Create a new team with a name, description and members
     public Team createTeam(String name, String description, List<String> memberEmails, String creatorEmail) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Team name is required");
         }
-
         Team team = new Team();
         team.setName(name);
         team.setDescription(description);
-
         Set<User> members = new HashSet<>();
-
         User creator = userRepository.findByEmail(creatorEmail)
                 .orElseThrow(() -> new RuntimeException("Creator not found: " + creatorEmail));
         members.add(creator);
-
         if (memberEmails != null) {
             for (String email : memberEmails) {
                 User member = userRepository.findByEmail(email)
@@ -46,45 +40,51 @@ public class TeamService {
                 members.add(member);
             }
         }
-
         team.setMembers(members);
         return teamRepository.save(team);
     }
 
-    // Method: Add members to an existing team by their email addresses
     @Transactional
     public Team addMembers(Long teamId, List<String> memberEmails) {
         Team team = teamRepository.findById(teamId)
             .orElseThrow(() -> new RuntimeException("Team nicht gefunden: " + teamId));
-
         for (String email : memberEmails) {
             User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User nicht gefunden: " + email));
-            // Fügt intern in team.getMembers() ein, Hibernate erzeugt später INSERT in team_members
             team.getMembers().add(user);
         }
         return teamRepository.save(team);
     }
 
-    // Method: Get all teams for a specific user
     public List<Team> getTeamsForUser(Long userId) {
         return teamRepository.findAll().stream()
                 .filter(team -> team.getMembers().stream().anyMatch(user -> user.getId().equals(userId)))
                 .collect(Collectors.toList());
     }
 
-    // Method: Get a team by its ID
     public Optional<Team> getTeamById(Long id) {
         return teamRepository.findById(id);
     }
 
-    // Method: Get all teams
     public List<Team> getAllTeams() {
         return teamRepository.findAll();
     }
-
     
-    // Method: Get all members of a team
+    // HIER IST DIE NEUE METHODE
+    @Transactional
+    public Team updateTeam(Long teamId, String name, String description) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new NoSuchElementException("Team not found with ID: " + teamId));
+        
+        if (name != null && !name.trim().isEmpty()) {
+            team.setName(name);
+        }
+        
+        team.setDescription(description); // description kann auch null oder leer sein
+        
+        return teamRepository.save(team);
+    }
+
     public List<Long> getTeamMembers(Long teamId) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new NoSuchElementException("Team not found with ID: " + teamId));
@@ -93,13 +93,11 @@ public class TeamService {
                 .toList();
     }
 
-    // Method: Delete a team by its ID
     @Transactional
     public void deleteTeam(Long teamId) {
-    if (!teamRepository.existsById(teamId)) {
-        throw new RuntimeException("Team nicht gefunden: " + teamId);
+        if (!teamRepository.existsById(teamId)) {
+            throw new RuntimeException("Team nicht gefunden: " + teamId);
+        }
+        teamRepository.deleteById(teamId);
     }
-    teamRepository.deleteById(teamId);
-}
-
 }
