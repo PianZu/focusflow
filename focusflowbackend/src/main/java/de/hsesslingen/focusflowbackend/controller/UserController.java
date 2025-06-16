@@ -49,12 +49,12 @@ public class UserController {
         if (registrationRequest.getPasswordConfirm() == null ||
             !registrationRequest.getPassword().equals(registrationRequest.getPasswordConfirm())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new AuthResponseDTO(null, null, null, null, null, "Passwörter stimmen nicht überein."));
+                    .body(new AuthResponseDTO(null, null, null, null, null, "Password confirmation does not match"));
         }
 
         if (userRepository.findByEmail(registrationRequest.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT) 
-                    .body(new AuthResponseDTO(null, null, null, null, null, "E-Mail bereits registriert."));
+                    .body(new AuthResponseDTO(null, null, null, null, null, "Email already registered"));
         }
 
         try {
