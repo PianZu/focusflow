@@ -1,0 +1,39 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+    branches: [dev]
+  pull_request:
+    branches: [main]
+    branches: [dev]
+
+jobs:
+  cypress-run:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Cypress dependencies
+        run: npx cypress install
+
+      - name: Start app
+        run: npm start &
+        env:
+          CI: true
+
+      - name: Wait for app to be ready
+        run: npx wait-on http://localhost:3000
+
+      - name: Run Cypress tests on Firefox
+        run: npx cypress run --headless --browser firefox --spec "cypress/integration/task.spec.js"
